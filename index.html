@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>휘매쓰 연산 챌린지!</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+        }
+        #game-container {
+            max-width: 800px;
+            margin: auto;
+        }
+        #energy-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ddd;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #energy {
+            width: 100%;
+            height: 100%;
+            background-color: #76c7c0;
+        }
+        .hidden {
+            display: none;
+        }
+        #question {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .option {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            width: 80%;
+            max-width: 400px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #e0f7fa;
+            border: none;
+            border-radius: 5px;
+        }
+        #score, #lives, #total-time {
+            font-size: 1em;
+            margin: 10px;
+        }
+        #popup {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -30%);
+            background-color: #fff9c4;
+            padding: 20px;
+            border: 2px solid #ffeb3b;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>휘매쓰 연산 챌린지!</h1>
+        <div id="difficulty-selection">
+            <p>난이도를 선택하세요:</p>
+            <button onclick="startGame('최상')">최상</button>
+            <button onclick="startGame('상')">상</button>
+            <button onclick="startGame('중')">중</button>
+            <button onclick="startGame('하')">하</button>
+        </div>
+        <div id="game" class="hidden">
+            <div id="energy-bar">
+                <div id="energy"></div>
+            </div>
+            <div id="question"></div>
+            <div id="options">
+                <button class="option" onclick="checkAnswer(0)"><span id="option0"></span></button>
+                <button class="option" onclick="checkAnswer(1)"><span id="option1"></span></button>
+                <button class="option" onclick="checkAnswer(2)"><span id="option2"></span></button>
+                <button class="option" onclick="checkAnswer(3)"><span id="option3"></span></button>
+            </div>
+            <div id="score">점수: 0</div>
+            <div id="lives">남은 기회: 3</div>
+            <div id="total-time">총 게임 시간: 0초</div>
+        </div>
+    </div>
+    <div id="popup"></div>
+    <script>
+        const problems = [
+            {
+                question: "x + y = 6,\\ xy = 4\\일 때,\\ x^{2} + y^{2}\\의 값을 구하여라.",
+                answer: 28
+            },
+            {
+                question: "x + y = 6,\\ xy = 4\\일 때,\\ (x - y)^{2}\\의 값을 구하여라.",
+                answer: 20
+            },
+            {
+                question: "x - y = 2,\\ xy = 3\\일 때,\\ x^{2} + y^{2}\\의 값을 구하여라.",
+                answer: 10
+            },
+            {
+                question: "x - y = 2,\\ xy = 3\\일 때,\\ (x + y)^{2}\\의 값을 구하여라.",
+                answer: 16
+            },
+            {
+                question: "a - b = 8,\\ ab = -15\\일 때,\\ a^{2} + b^{2}\\의 값을 구하여라.",
+                answer: 34
+            },
+            {
+                question: "a - b = 8,\\ ab = -15\\일 때,\\ (a + b)^{2}\\의 값을 구하여라.",
+                answer: 4
+            },
+            {
+                question: "x - y = -3,\\ xy = 4\\일 때,\\ x^{2} + y^{2}\\의 값을 구하여라.",
+                answer: 17
+            },
+            {
+                question: "x - y = -3,\\ xy = 4\\일 때,\\ (x + y)^{2}\\의 값을 구하여라.",
+                answer: 25
+            },
+            {
+                question: "x - y = -5,\\ xy = -6\\일 때,\\ x^{2} + y^{2}\\의 값을 구하여라.",
+                answer: 13
+            },
+            {
+                question: "x - y = -5,\\ xy = -6\\일 때,\\ (x + y)^{2}\\의 값을 구하여라.",
+                answer: 1
+            },
+            {
+                question: "a - b = -1,\\ ab = 12\\일 때,\\ a^{2} + b^{2}\\의 값을 구하여라.",
+                answer: 25
+            },
+            {
+                question: "a - b = -1,\\ ab = 12\\일 때,\\ (a + b)^{2}\\의 값을 구하여라.",
+                answer: 49
+            },
+            {
+                question: "a + b = 3,\\ ab = 2\\일 때,\\ a^{2} + b^{2}\\의 값을 구하여라.",
+                answer: 5
+            },
+            {
+                question: "a + b = 3,\\ ab = 2\\일 때,\\ (a - b)^{2}\\의 값을 구하여라.",
+                answer: 1
+            },
+            {
+                question: "x + y = -2,\\ xy = -8\\일 때,\\ x^{2} + y^{2}\\의 값을 구하여라.",
+                answer: 20
+            },
+            {
+                question: "x + y = -2,\\ xy = -8\\일 때,\\ (x - y)^{2}\\의 값을 구하여라.",
+                answer: 36
+            },
+            {
+                question: "x + y = -7,\\ xy = 6\\일 때,\\ x^{2} + y^{2}\\의 값을 구하여라.",
+                answer: 37
+            },
+            {
+                question: "x + y = -7,\\ xy = 6\\일 때,\\ (x - y)^{2}\\의 값을 구하여라.",
+                answer: 25
+            },
+            {
+                question: "a + b = 3,\\ ab = -10\\일 때,\\ a^{2} + b^{2}\\의 값을 구하여라.",
+                answer: 29
+            },
+            {
+                question: "a + b = 3,\\ ab = -10\\일 때,\\ (a - b)^{2}\\의 값을 구하여라.",
+                answer: 49
+            },
+            {
+                question: "x + \\dfrac{1}{x} = 4\\일 때,\\ x^{2} + \\dfrac{1}{x^{2}}\\의 값을 구하여라.",
+                answer: 14
+            },
+            {
+                question: "x + \\dfrac{1}{x} = 4\\일 때,\\ \\left(x - \\dfrac{1}{x}\\right)^{2}\\의 값을 구하여라.",
+                answer: 12
+            },
+            {
+                question: "a - b = 6,\\ a^{2} + b^{2} = 20\\일 때,\\ ab\\의 값을 구하여라.",
+                answer: -8
+            },
+            {
+                question: "a + b = -4,\\ a^{2} + b^{2} = 30\\일 때,\\ ab\\의 값을 구하여라.",
+                answer: -7
+            },
+            {
+                question: "a + b = 4,\\ a^{2} + b^{2} = 6\\일 때,\\ \\dfrac{a}{b} + \\dfrac{b}{a}\\의 값을 구하여라.",
+                answer: "\\dfrac{6}{5}"
+            },
+            {
+                question: "x - y = 4,\\ (x + y)^{2} = 64\\일 때,\\ xy\\의 값을 구하여라.",
+                answer: 12
+            },
+            {
+                question: "x + y = 6,\\ x^{2} + y^{2} = 26\\일 때,\\ xy\\의 값을 구하여라.",
+                answer: 5
+            },
+            {
+                question: "a + b = -4,\\ a^{2} + b^{2} = 10\\일 때,\\ \\left(a - b\\right)^{2}\\의 값을 구하여라.",
+                answer: 4
+            },
+            {
+                question: "x + y = 7,\\ xy = 5\\일 때,\\ \\left(x - y\\right)^{2}\\의 값을 구하여라.",
+                answer: 29
+            },
+            {
+                question: "x - y = 4,\\ xy = 3\\일 때,\\ \\left(x + y\\right)^{2}\\의 값을 구하여라.",
+                answer: 28
+            },
+            {
+                question: "x + y = 5,\\ xy = -14\\일 때,\\ \\dfrac{y}{x} + \\dfrac{x}{y}\\의 값을 구하여라.",
+                answer: "-\\dfrac{53}{14}"
+            },
+            {
+                question: "x + \\dfrac{1}{x} = 6\\일 때,\\ x^{2} + \\dfrac{1}{x^{2}}\\의 값을 구하여라.",
+                answer: 34
+            },
+            {
+                question: "x + y = 6,\\ \\dfrac{y}{x} + \\dfrac{x}{y} = 7\\일 때,\\ \\left(x - y\\right)^{2}\\의 값을 구하여라.",
+                answer: 20
+            },
+            {
+                question: "a + b = 7,\\ a^{2} + b^{2} = 29\\일 때,\\ \\dfrac{1}{a} + \\dfrac{1}{b}\\의 값을 구하여라.",
+                answer: "\\dfrac{7}{10}"
+            },
+            {
+                question: "x - y = 1,\\ xy = 2\\일 때,\\ \\dfrac{y}{x} + \\dfrac{x}{y}\\의 값을 구하여라.",
+                answer: "\\dfrac{5}{2}"
+            },
+            {
+                question: "x = \\sqrt{2} + 3\\일 때,\\ x^{2} - 6x\\의 값을 구하여라.",
+                answer: -7
+            },
+            {
+                question: "x = 3 - 2\\sqrt{2}\\일 때,\\ x^{2} - 6x + 11\\의 값을 구하여라.",
+                answer: 10
+            },
+            {
+                question: "x = \\dfrac{1}{3 - 2\\sqrt{2}}\\일 때,\\ x^{2} - 6x - 2\\의 값을 구하여라.",
+                answer: -5
+            },
+            {
+                question: "x = \\dfrac{1}{2 - \\sqrt{5}}\\일 때,\\ x^{2} + 4x - 5\\의 값을 구하여라.",
+                answer: -4
+            },
+            {
+                question: "x = 2 + \\sqrt{3}\\일 때,\\ x^{2} - 4x\\의 값을 구하여라.",
+                answer: -1
+            }
+        ];
+
+        let gameTime = 0;
+        let gameInterval;
+        let energyInterval;
+        let totalTimeInterval;
+        let energyWidth;
+        let energyDecreaseRate;
+        let currentProblemIndex;
+        let score = 0;
+        let lives = 3;
+        let totalTime = 0;
+        let difficulty;
+        let pointsPerQuestion;
+        let timeLimit;
+        let problemSequence = [];
+
+        function startGame(selectedDifficulty) {
+            difficulty = selectedDifficulty;
+            document.getElementById('difficulty-selection').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            if (difficulty === '최상') {
+                timeLimit = 20;
+                pointsPerQuestion = 20;
+            } else if (difficulty === '상') {
+                timeLimit = 30;
+                pointsPerQuestion = 15;
+            } else if (difficulty === '중') {
+                timeLimit = 40;
+                pointsPerQuestion = 13;
+            } else {
+                timeLimit = Infinity;
+                pointsPerQuestion = 10;
+            }
+            energyDecreaseRate = 100 / timeLimit;
+            totalTimeInterval = setInterval(() => {
+                totalTime++;
+                document.getElementById('total-time').innerText = `총 게임 시간: ${totalTime}초`;
+            }, 1000);
+            problemSequence = [...problems];
+            shuffleArray(problemSequence);
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (lives <= 0) {
+                endGame();
+                return;
+            }
+            if (energyInterval) clearInterval(energyInterval);
+            energyWidth = 100;
+            document.getElementById('energy').style.width = '100%';
+            if (difficulty !== '하') {
+                energyInterval = setInterval(() => {
+                    energyWidth -= energyDecreaseRate * 0.1;
+                    document.getElementById('energy').style.width = energyWidth + '%';
+                    if (energyWidth <= 0) {
+                        clearInterval(energyInterval);
+                        lives--;
+                        document.getElementById('lives').innerText = `남은 기회: ${lives}`;
+                        showAnswer(false);
+                    }
+                }, 100);
+            }
+            if (problemSequence.length === 0) {
+                problemSequence = [...problems];
+                shuffleArray(problemSequence);
+            }
+            currentProblemIndex = Math.floor(Math.random() * problemSequence.length);
+            const currentProblem = problemSequence[currentProblemIndex];
+            document.getElementById('question').innerHTML = `\\(${currentProblem.question}\\)`;
+            MathJax.typeset();
+            generateOptions(currentProblem.answer);
+            problemSequence.splice(currentProblemIndex, 1);
+        }
+
+        function generateOptions(correctAnswer) {
+            let options = new Set();
+            options.add(correctAnswer);
+            while (options.size < 4) {
+                let wrongAnswer;
+                if (typeof correctAnswer === 'number') {
+                    wrongAnswer = correctAnswer + Math.floor(Math.random() * 20) - 10;
+                    if (wrongAnswer === correctAnswer || options.has(wrongAnswer)) continue;
+                } else {
+                    wrongAnswer = generateWrongFraction(correctAnswer);
+                    if (wrongAnswer === correctAnswer || options.has(wrongAnswer)) continue;
+                }
+                options.add(wrongAnswer);
+            }
+            options = Array.from(options);
+            shuffleArray(options);
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`option${i}`).innerHTML = `\\(${options[i]}\\)`;
+                MathJax.typesetPromise();
+                if (options[i] === correctAnswer) {
+                    window.correctOption = i;
+                }
+            }
+        }
+
+        function generateWrongFraction(correctFraction) {
+            let [numerator, denominator] = correctFraction.match(/-?\d+/g).map(Number);
+            numerator += Math.floor(Math.random() * 5) - 2;
+            denominator += Math.floor(Math.random() * 5) - 2;
+            if (denominator === 0) denominator = 1;
+            return `\\dfrac{${numerator}}{${denominator}}`;
+        }
+
+        function checkAnswer(selectedOption) {
+            if (selectedOption === window.correctOption) {
+                score += pointsPerQuestion;
+                document.getElementById('score').innerText = `점수: ${score}`;
+                showPopup();
+            } else {
+                lives--;
+                document.getElementById('lives').innerText = `남은 기회: ${lives}`;
+                showAnswer(true);
+            }
+            nextQuestion();
+        }
+
+        function showAnswer(isWrong) {
+            const correctAnswer = problems.find(p => `\\(${p.answer}\\)` === document.getElementById(`option${window.correctOption}`).innerHTML).answer;
+            if (isWrong) {
+                alert(`틀렸습니다! 정답은 ${correctAnswer}입니다.`);
+            } else {
+                alert(`시간 초과! 정답은 ${correctAnswer}입니다.`);
+            }
+        }
+
+        function endGame() {
+            clearInterval(totalTimeInterval);
+            alert(`게임 종료! 최종 점수: ${score}`);
+            location.reload();
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function showPopup() {
+            let randomNumber = Math.random();
+            let popupText = '';
+            if (randomNumber < 0.0001) {
+                popupText = '축하합니다! 5000원 상품권에 당첨되셨습니다!';
+            } else if (randomNumber < 0.0011) {
+                popupText = '축하합니다! 3000원 상품권에 당첨되셨습니다!';
+            } else if (randomNumber < 0.0031) {
+                popupText = '축하합니다! 1회 면제권을 획득하셨습니다!';
+            }
+            if (popupText) {
+                const popup = document.getElementById('popup');
+                popup.innerText = popupText;
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
